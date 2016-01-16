@@ -145,6 +145,10 @@
 			I.mechanize()
 
 	if(flags & IS_BUG)
+		for (var/datum/organ/external/E in H.organs)
+			if ((E.status & ORGAN_CUT_AWAY) || (E.status & ORGAN_DESTROYED))
+				continue
+			E.status |= ORGAN_ADV_ROBOT
 		for(var/datum/organ/internal/I in H.internal_organs)
 			I.mechanize()
 
@@ -201,17 +205,17 @@
 // Grabs the window recieved when you click-drag someone onto you.
 /datum/species/proc/get_inventory_dialogue(var/mob/living/carbon/human/H)
 	return
-	
+
 
 //Used by xenos understanding larvae and dionaea understanding nymphs.
 /datum/species/proc/can_understand(var/mob/other)
 	return
-	
-	
+
+
 /datum/species/proc/blend_preview_icon(var/icon/main_icon,var/datum/preferences/preferences,var/paint_colour)
 	if(paint_colour)
 		main_icon.Blend(paint_colour, ICON_ADD)
-		return 
+		return
 	if(flags & HAS_SKIN_COLOR)
 		main_icon.Blend(rgb(preferences.r_skin, preferences.g_skin, preferences.b_skin), ICON_ADD)
 		return
@@ -220,8 +224,8 @@
 			main_icon.Blend(rgb(preferences.s_tone, preferences.s_tone, preferences.s_tone), ICON_ADD)
 		else
 			main_icon.Blend(rgb(-preferences.s_tone, -preferences.s_tone, -preferences.s_tone), ICON_SUBTRACT)
-			
-	
+
+
 /datum/species/proc/get_organ_preview_icon(var/name, var/robot, var/gendered, var/gender_string, var/datum/preferences/preferences, var/datum/synthetic_limb_cover/covering, var/paint_colour)
 	var/icon_name = icobase
 	if (robot)
@@ -236,7 +240,7 @@
 	var/icon/result = new /icon(icon_name,state_name)
 	blend_preview_icon(result,preferences,paint_colour)
 	return result
-	
+
 
 /datum/species/proc/get_is_preview_organ_robotic(var/name,var/datum/preferences/preferences)
 	if (flags & IS_SYNTHETIC)
@@ -245,7 +249,7 @@
 		var/list/organ_robotic_info=preferences.organ_data[name]
 		if (istype(organ_robotic_info))
 			return TRUE
-			
+
 /datum/species/proc/get_preview_organ_covering(var/name,var/datum/preferences/preferences)
 	if (name in preferences.organ_data)
 		var/list/organ_robotic_info=preferences.organ_data[name]
@@ -254,8 +258,8 @@
 	if (preferences.species=="Machine")
 		if (preferences.covering_type)
 			return list(preferences.covering_type,rgb(preferences.r_skin,preferences.g_skin,preferences.b_skin))
-			
-			
+
+
 /datum/species/proc/get_tail_preview_icon(var/list/preview_coverings,var/datum/preferences/preferences)
 	var/tail_state=null
 	if (!(isnull(preview_coverings["groin"])))
@@ -268,8 +272,8 @@
 		var/icon/result = new/icon("icon" = 'icons/effects/species.dmi', "icon_state" = tail_state)
 		result.Blend(rgb(preferences.r_hair,preferences.g_hair,preferences.b_hair),ICON_ADD)
 		return result
-		
-		
+
+
 /datum/species/proc/get_eyes_preview_icon(var/list/preview_coverings,var/datum/preferences/preferences)
 	var/eye_state=null
 	if (!(isnull(preview_coverings["head"])))
@@ -280,13 +284,13 @@
 	var/icon/result = new/icon('icons/mob/human_face.dmi',eye_state)
 	result.Blend(rgb(preferences.r_eyes,preferences.g_eyes,preferences.b_eyes),ICON_ADD)
 	return result
-	
+
 /* This function takes a preferences object and generates a complete body and hair icon for that set of preferences. It's needlessly complicated
 and duplicates a lot of what's going on in update_icons. The two systems should be combined somehow, possibly by using a 'visual identity' object
-that could be created from either a living human or a preferences object and then passing that to a single render function, but I'll leave that 
+that could be created from either a living human or a preferences object and then passing that to a single render function, but I'll leave that
 exercise for another day.
 
-See code\modules\mob\new_player\preferences_setup.dm for where it's used. 
+See code\modules\mob\new_player\preferences_setup.dm for where it's used.
 																							- jack_fractal*/
 /datum/species/proc/create_body_preview_icon(var/datum/preferences/preferences)
 	var/gender_string = (preferences.gender==FEMALE) ? "f" : "m"
@@ -578,7 +582,7 @@ See code\modules\mob\new_player\preferences_setup.dm for where it's used.
 	rarity_value = 2
 
 	eyes = "blank_eyes"
-	brute_mod = 0.5
+	brute_mod = 1	//Fuck yo brute mod.
 	burn_mod = 1
 
 	warning_low_pressure = 50
@@ -602,6 +606,10 @@ See code\modules\mob\new_player\preferences_setup.dm for where it's used.
 	has_organ = list(
 		"heart" =    /datum/organ/internal/heart,
 		"brain" =    /datum/organ/internal/brain/robot,
+		"eyes" =	 /datum/organ/internal/eyes/robot,
+		"radiator" = /datum/organ/internal/machine/radiator,
+		"chemical containment" = /datum/organ/internal/machine/bladder,
+		"diagnosis unit" = /datum/organ/internal/machine/diagnosis_unit,
 		)
 /datum/species/machine/create_organs(var/mob/living/carbon/human/H)
 	..()
@@ -609,20 +617,20 @@ See code\modules\mob\new_player\preferences_setup.dm for where it's used.
 	if (istype(brain_datum))
 		if (isnull(brain_datum.machine_brain_type))
 			brain_datum.machine_brain_type="Posibrain"
-	
-	
+
+
 /datum/species/bug
 	name = "Vaurca"
 	name_plural = "varucae"
 
-	icobase = 'icons/mob/human_races/r_machine.dmi' //placeholders
-	deform = 'icons/mob/human_races/r_machine.dmi' //bloop blop butts
+	icobase = 'icons/mob/human_races/r_vaurca.dmi' //Experimental as fuck
+	deform = 'icons/mob/human_races/r_vaurca.dmi' //bloop blop butts
 	language = "Vaurcese"
 	unarmed_type = /datum/unarmed_attack/claws //literally butts
 	secondary_unarmed_type = /datum/unarmed_attack/bite/strong
 	rarity_value = 2 //according to the code this does nothing but upset me so i guess it can stay
 	slowdown = 1 //slow
-	darksight = 666 //good at seeing
+	darksight = 5 //good at seeing
 	eyes = "blank_eyes" //made out of butts
 	brute_mod = 0.5 //note to self: remove is_synthetic checks for brmod and burnmod
 	burn_mod = 2 //bugs on fire
@@ -639,9 +647,9 @@ See code\modules\mob\new_player\preferences_setup.dm for where it's used.
 	heat_level_2 = 380 //Default 400
 	heat_level_3 = 600 //Default 1000 //bugs do not like fire because exoskeletons are poor ventilation
 
-	flags = IS_WHITELISTED | NO_SLIP | IS_BUG //IS_BUG doesn't do much at the moment.  proc up top + radiation resistance.
+	flags = IS_WHITELISTED | NO_SLIP | IS_BUG | NO_SCAN //IS_BUG doesn't do much at the moment.  proc up top + radiation resistance.
 	//use IS_BUG when you do the make their eyes die from being flashed thing, sounds/skull.  okay thanks.
-	blood_color = "#1F181F" // note: discover hex for yellow
+	blood_color = "#E6E600" // dark yellow
 	flesh_color = "#575757" //this is a placeholder also.
 
 	inherent_verbs = list(
@@ -649,6 +657,16 @@ See code\modules\mob\new_player\preferences_setup.dm for where it's used.
 		)
 
 	//make has_organ list when we can be bothered with bug gut sprites.  it'll be cool, i promise
+	has_organ = list(
+        "neural socket" =  /datum/organ/internal/vaurca/neuralsocket,
+		"breathing apparatus" =  /datum/organ/internal/vaurca/breathingapparatus,
+        "heart" =    /datum/organ/internal/heart,
+        "second heart" =    /datum/organ/internal/heart,
+		"liver" =    /datum/organ/internal/liver,
+		"kidneys" =  /datum/organ/internal/kidney,
+		"brain" =    /datum/organ/internal/brain,
+		"eyes" =     /datum/organ/internal/eyes,
+)
 
 // Called when using the shredding behavior.
 /datum/species/proc/can_shred(var/mob/living/carbon/human/H)

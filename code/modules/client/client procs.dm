@@ -14,6 +14,7 @@
 
 	Because of this certain things MUST be considered whenever adding a Topic() for something:
 		- Can it be fed harmful values which could cause runtimes?
+
 		- Is the Topic call an admin-only thing?
 		- If so, does it have checks to see if the person who called it (usr.client) is an admin?
 		- Are the processes being called by Topic() particularly laggy?
@@ -89,19 +90,30 @@
 	..()	//redirect to hsrc.Topic()
 
 /client/proc/handle_spam_prevention(var/message, var/mute_type)
-	if(config.automute_on && !holder && src.last_message == message)
-		src.last_message_count++
-		if(src.last_message_count >= SPAM_TRIGGER_AUTOMUTE)
-			src << "\red You have exceeded the spam filter limit for identical messages. An auto-mute was applied."
-			cmd_admin_mute(src.mob, mute_type, 1)
-			return 1
-		if(src.last_message_count >= SPAM_TRIGGER_WARNING)
-			src << "\red You are nearing the spam filter limit for identical messages."
+	if(config.automute_on && !holder)
+		if(src.last_message_time > world.time - SPAM_TIMER * 10)
+			if(src.last_message_timer > SPAM_TRIGGER_AUTOMUTE)
+				src << "\red You have exceeded the spam filter limit for speaking too fast. An auto-mute was applied."
+				cmd_admin_mute(src.mob, mute_type, 1)
+				return 1
+			src.last_message_timer++
+		else
+			src.last_message_timer = 0
+			src.last_message_time = world.time
+
+		if(src.last_message == message)
+			src.last_message_count++
+			if(src.last_message_count >= SPAM_TRIGGER_AUTOMUTE)
+				src << "\red You have exceeded the spam filter limit for identical messages. An auto-mute was applied."
+				cmd_admin_mute(src.mob, mute_type, 1)
+				return 1
+			if(src.last_message_count >= SPAM_TRIGGER_WARNING)
+				src << "\red You are nearing the spam filter limit for identical messages."
+				return 0
+		else
+			last_message = message
+			src.last_message_count = 0
 			return 0
-	else
-		last_message = message
-		src.last_message_count = 0
-		return 0
 
 //This stops files larger than UPLOAD_LIMIT being sent from client to server via input(), client.Import() etc.
 /client/AllowUpload(filename, filelength)
@@ -191,7 +203,6 @@
 	if(prefs.lastchangelog != changelog_hash) //bolds the changelog button on the interface so we know there are updates.
 		winset(src, "rpane.changelog", "background-color=#eaeaea;font-style=bold")
 
-
 	//////////////
 	//DISCONNECT//
 	//////////////
@@ -214,15 +225,14 @@
 	if(!dbcon.IsConnected())
 		return
 
-	var/sql_ckey = sql_sanitize_text(src.ckey)
-
-	var/DBQuery/query = dbcon.NewQuery("SELECT id, datediff(Now(),firstseen) as age FROM ss13_player WHERE ckey = '[sql_ckey]'")
-	query.Execute()
+	var/DBQuery/query = dbcon.NewQuery("SELECT id, datediff(Now(),firstseen) as age, whitelist_status FROM ss13_player WHERE ckey = :ckey")
+	query.Execute(list(":ckey" = ckey))
 	var/sql_id = 0
 	player_age = 0	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
 	while(query.NextRow())
 		sql_id = query.item[1]
 		player_age = text2num(query.item[2])
+		whitelist_status = text2num(query.item[3])
 		break
 
 	var/DBQuery/query_ip = dbcon.NewQuery("SELECT ckey FROM ss13_player WHERE ip = '[address]'")
@@ -250,24 +260,19 @@
 	if(src.holder)
 		admin_rank = src.holder.rank
 
-	var/sql_ip = sql_sanitize_text(src.address)
-	var/sql_computerid = sql_sanitize_text(src.computer_id)
-	var/sql_admin_rank = sql_sanitize_text(admin_rank)
-
-
 	if(sql_id)
 		//Player already identified previously, we need to just update the 'lastseen', 'ip' and 'computer_id' variables
-		var/DBQuery/query_update = dbcon.NewQuery("UPDATE ss13_player SET lastseen = Now(), ip = '[sql_ip]', computerid = '[sql_computerid]', lastadminrank = '[sql_admin_rank]' WHERE id = [sql_id]")
-		query_update.Execute()
+		var/DBQuery/query_update = dbcon.NewQuery("UPDATE ss13_player SET lastseen = Now(), ip = :ip, computerid = :computer_id, lastadminrank = :admin_rank WHERE id = :id")
+		query_update.Execute(list(":ip" = address, ":computer_id" = computer_id, ":admin_rank" = admin_rank, ":id" = sql_id))
 	else
 		//New player!! Need to insert all the stuff
-		var/DBQuery/query_insert = dbcon.NewQuery("INSERT INTO ss13_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, '[sql_ckey]', Now(), Now(), '[sql_ip]', '[sql_computerid]', '[sql_admin_rank]')")
-		query_insert.Execute()
+		var/DBQuery/query_insert = dbcon.NewQuery("INSERT INTO ss13_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computer_id, :admin_rank)")
+		query_insert.Execute(list(":ckey" = ckey, ":ip" = address, ":computer_id" = computer_id, ":admin_rank" = admin_rank))
 
 	//Logging player access
 	var/serverip = "[world.internet_address]:[world.port]"
-	var/DBQuery/query_accesslog = dbcon.NewQuery("INSERT INTO `ss13_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),'[serverip]','[sql_ckey]','[sql_ip]','[sql_computerid]');")
-	query_accesslog.Execute()
+	var/DBQuery/query_accesslog = dbcon.NewQuery("INSERT INTO `ss13_connection_log`(`id`, `datetime`, `serverip`, `ckey`, `ip`, `computerid`) VALUES(null, Now(), :server_ip, :ckey, :ip, :computer_id);")
+	query_accesslog.Execute(list(":server_ip" = serverip, ":ckey" = ckey, ":ip" = address, ":computer_id" = computer_id))
 
 
 #undef TOPIC_SPAM_DELAY

@@ -629,13 +629,12 @@
 		else
 			jobs += "<td width='20%'><a href='?src=\ref[src];jobban3=Emergency Response Team;jobban4=\ref[M]'>Emergency Response Team</a></td>"
 
-
-/*		//Malfunctioning AI	//Removed Malf-bans because they're a pain to impliment
-		if(jobban_isbanned(M, "malf AI") || isbanned_dept)
-			jobs += "<td width='20%'><a href='?src=\ref[src];jobban3=malf AI;jobban4=\ref[M]'><font color=red>[replacetext("Malf AI", " ", "&nbsp")]</font></a></td>"
+		//Malfunctioning AI	//Removed Malf-bans because they're a pain to impliment //Why? Learn to program
+		if(jobban_isbanned(M, "MALFAI") || isbanned_dept)
+			jobs += "<td width='20%'><a href='?src=\ref[src];jobban3=malf AI;jobban4=\ref[M]'><font color=red>[replacetext("MALFAI", " ", "&nbsp")]</font></a></td>"
 		else
-			jobs += "<td width='20%'><a href='?src=\ref[src];jobban3=malf AI;jobban4=\ref[M]'>[replacetext("Malf AI", " ", "&nbsp")]</a></td>"
-
+			jobs += "<td width='20%'><a href='?src=\ref[src];jobban3=malf AI;jobban4=\ref[M]'>[replacetext("MALFAI", " ", "&nbsp")]</a></td>"
+/*
 		//Alien
 		if(jobban_isbanned(M, "alien candidate") || isbanned_dept)
 			jobs += "<td width='20%'><a href='?src=\ref[src];jobban3=alien candidate;jobban4=\ref[M]'><font color=red>[replacetext("Alien", " ", "&nbsp")]</font></a></td>"
@@ -1366,6 +1365,7 @@
 		var/special_role_description = ""
 		var/health_description = ""
 		var/gender_description = ""
+		var/species_description = ""
 		var/turf/T = get_turf(M)
 
 		//Location
@@ -1399,8 +1399,18 @@
 			if(MALE,FEMALE)	gender_description = "[M.gender]"
 			else			gender_description = "<font color='red'><b>[M.gender]</b></font>"
 
+		//Species
+		if(ishuman(M))
+			var/mob/living/carbon/human/K = M
+			if(K.species)
+				species_description = "[K.species.name]"
+			else
+				species_description = "Unknown"
+		else
+			species_description = "N/A"
+
 		src.owner << "<b>Info about [M.name]:</b> "
-		src.owner << "Mob type = [M.type]; Gender = [gender_description] Damage = [health_description]"
+		src.owner << "Mob type = [M.type]; Species = <b>[species_description]</b>; Gender = [gender_description]; Damage = [health_description]"
 		src.owner << "Name = <b>[M.name]</b>; Real_name = [M.real_name]; Mind_name = [M.mind?"[M.mind.name]":""]; Key = <b>[M.key]</b>;"
 		src.owner << "Location = [location_description];"
 		src.owner << "[special_role_description]"
@@ -2874,4 +2884,13 @@
 		var/playerckey = href_list["notessearchckey"]
 
 		show_notes_sql(playerckey, adminckey)
+		return
+
+	else if(href_list["dbwarningedit"])
+		var/warningEdit = href_list["dbwarningedit"]
+		var/warningId = text2num(href_list["dbwarningid"])
+		if(!warningEdit || !warningId)
+			return
+
+		warningsEdit(warningId, warningEdit)
 		return

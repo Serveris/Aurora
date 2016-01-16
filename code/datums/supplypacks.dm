@@ -652,8 +652,8 @@ var/list/all_supply_groups = list("Operations","Security","Hospitality","Enginee
 	name = "Weapons crate"
 	contains = list(/obj/item/weapon/melee/baton,
 					/obj/item/weapon/melee/baton,
-					/obj/item/weapon/gun/energy/laser,
-					/obj/item/weapon/gun/energy/laser,
+					/obj/item/weapon/gun/energy/rifle/laser,
+					/obj/item/weapon/gun/energy/rifle/laser,
 					/obj/item/weapon/gun/energy/taser,
 					/obj/item/weapon/gun/energy/taser,
 					/obj/item/weapon/storage/box/flashbangs,
@@ -1345,3 +1345,23 @@ var/list/all_supply_groups = list("Operations","Security","Hospitality","Enginee
 	containername = "Pill Bottle Kit"
 	access = access_medical
 	group = "Medical / Science"
+
+/datum/supply_packs/maglocks_engineering
+	name = "Engineering Magnetic Lock Crate"
+	contains = list(/obj/item/device/magnetic_lock/engineering,
+					/obj/item/device/magnetic_lock/engineering,
+					/obj/item/device/magnetic_lock/engineering)
+	cost = 30
+	containertype = /obj/structure/closet/crate
+	containername = "engineering magnetic locks"
+	group = "Engineering"
+
+/datum/supply_packs/maglocks_security
+	name = "Security Magnetic Lock Crate"
+	contains = list(/obj/item/device/magnetic_lock/security,
+					/obj/item/device/magnetic_lock/security,
+					/obj/item/device/magnetic_lock/security)
+	cost = 30
+	containertype = /obj/structure/closet/crate
+	containername = "security magnetic locks"
+	group = "Security"

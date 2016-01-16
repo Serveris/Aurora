@@ -88,6 +88,8 @@
 	var/aurorawikiurl
 	var/githuburl
 
+	var/whitelists_on_sql = 0			//Changes how whitelists are handled. SQL connection required to run this!
+
 	//Alert level description
 	var/alert_desc_green = "All threats to the station have passed. Security may not have weapons visible, privacy laws are once again fully enforced."
 	var/alert_desc_blue_upto = "The station has received reliable information about possible hostile activity on the station. Security staff may have weapons visible, random searches are permitted."
@@ -156,6 +158,8 @@
 	var/list/admin_levels= list(2)					// Defines which Z-levels which are for admin functionality, for example including such areas as Central Command and the Syndicate Shuttle
 	var/list/contact_levels = list(1, 5)			// Defines which Z-levels which, for example, a Code Red announcement may affect
 	var/list/player_levels = list(1, 3, 4, 5, 6)	// Defines all Z-levels a character can typically reach
+
+	var/list/age_restrictions = list()				// Holds all of the age restrictions for jobs and antag roles in a single associated list
 
 /datum/configuration/New()
 	var/list/L = typesof(/datum/game_mode) - /datum/game_mode
@@ -526,6 +530,9 @@
 				if("topic_safe_address")
 					topic_safe_address = value
 
+				if ("whitelists_on_sql")
+					config.whitelists_on_sql = 1
+
 				else
 					log_misc("Unknown setting in configuration: '[name]'")
 
@@ -575,6 +582,11 @@
 					config.use_loyalty_implants = 1
 				else
 					log_misc("Unknown setting in configuration: '[name]'")
+
+		else if (type == "age_restrictions")
+			name = replacetext(name, "_", " ")
+			age_restrictions += name
+			age_restrictions[name] = text2num(value)
 
 /datum/configuration/proc/loadsql(filename)  // -- TLE
 	var/list/Lines = file2list(filename)
